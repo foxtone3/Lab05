@@ -1,0 +1,100 @@
+{
+  "R1": {
+    "addresses": {
+      "interface": {
+        "v4": [
+          "20.0.0.1"
+        ],
+        "v6": []
+      }
+    },
+    "inteface status": {
+      "FastEthernet0/0": "down",
+      "FastEthernet1/0": "up",
+      "FastEthernet1/1": "down",
+      "FastEthernet2/0": "down",
+      "FastEthernet2/1": "down",
+      "GigabitEthernet3/0": "down",
+      "Null0": "up"
+    }
+  },
+  "R2": {
+    "addresses": {
+      "interface": {
+        "v4": [
+          "10.0.0.2",
+          "20.0.0.3"
+        ],
+        "v6": []
+      }
+    },
+    "inteface status": {
+      "FastEthernet0/0": "up",
+      "FastEthernet1/0": "up",
+      "FastEthernet1/1": "down",
+      "FastEthernet2/0": "down",
+      "FastEthernet2/1": "down",
+      "GigabitEthernet3/0": "down",
+      "Null0": "up"
+    }
+  },
+  "R3": {
+    "addresses": {
+      "interface": {
+        "v4": [
+          "10.0.0.3",
+          "20.0.0.2"
+        ],
+        "v6": []
+      }
+    },
+    "inteface status": {
+      "FastEthernet0/0": "up",
+      "FastEthernet1/0": "up",
+      "FastEthernet1/1": "down",
+      "FastEthernet2/0": "down",
+      "FastEthernet2/1": "down",
+      "GigabitEthernet3/0": "down",
+      "Null0": "up"
+    }
+  },
+  "R4": {
+    "addresses": {
+      "interface": {
+        "v4": [
+          "10.0.0.4",
+          "198.51.100.4"
+        ],
+        "v6": []
+      }
+    },
+    "inteface status": {
+      "FastEthernet0/0": "up",
+      "FastEthernet1/0": "up",
+      "FastEthernet1/1": "down",
+      "FastEthernet2/0": "down",
+      "FastEthernet2/1": "down",
+      "GigabitEthernet3/0": "down",
+      "Null0": "up"
+    }
+  },
+  "R5": {
+    "addresses": {
+      "interface": {
+        "v4": [
+          "10.0.0.1"
+        ],
+        "v6": []
+      }
+    },
+    "inteface status": {
+      "FastEthernet0/0": "up",
+      "FastEthernet1/0": "down",
+      "FastEthernet1/1": "down",
+      "FastEthernet2/0": "down",
+      "FastEthernet2/1": "down",
+      "GigabitEthernet3/0": "down",
+      "Null0": "up"
+    }
+  }
+}

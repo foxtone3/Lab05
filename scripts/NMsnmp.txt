@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+'''
+READ ME:
+This python file is designed to check for the existence of a file, in this case a .csv or .json. The target file
+should contain applicable data for expected ssh devices. These file's content should then be instantiated in a
+dictionary for parsing. At minimum, the file should contain device's name, ios, IP, username, and password.
+
+'''
+
+#Imports at the top
+
+from loguru import logger
+
+import json, time
+import matplotlib.pyplot as plt
+from easysnmp import Session
+
+#All functions that organize code go here:
+
+    #OIDs
+# Interface table
+ifDesc = "1.3.6.1.2.1.2.2.1.2"
+ifStatus = "1.3.6.1.2.1.2.2.1.8" # (1=up,2=down,...)
+
+# IPv4 address table
+ipv4Addr = "1.3.6.1.2.1.4.20.1.1"
+ipv4Mask = "1.3.6.1.2.1.4.20.1.3"
+
+# IPv6 address table
+ipv6Addr = "1.3.6.1.2.1.55.1.8.1.2"
+ipv6Pfx = "1.3.6.1.2.1.55.1.8.1.3"
+
+# CPU
+ciscoCPU = "1.3.6.1.4.1.9.2.1.57"
+
+
+    #create a function to peform SNMP
+def startSession(v6Host, community):
+    return Session(hostname=v6Host, community=community, version=2)
+
+def intStat(session):
+    
+    status = {}
+
+    desc = session.walk(ifDesc)
+    st = session.walk(ifStatus)
+
+    count = min(len(desc), len(st)) #if they're not the same size/length...
+
+    for i in range(count):
+        
+        name = desc[i].value
+        rawSt = st[i].value
+
+        if rawSt == '1':
+            status[name] = 'up'
+        
+        elif rawSt == '2':
+            status[name] = 'down'
+        
+        else:
+            status[name] = f"Other: {rawSt}"
+    
+    return status
+
+    #Find snmp interface addresses and add the mto a dictionary
+def ipAdd(session):
+    
+    v4 = []
+    v6 = []
+
+    ipv4 = session.walk(ipv4Addr)
+    ipv6 = session.walk(ipv6Addr)
+
+    for i in ipv4:
+        v4.append(i.value)
+    
+    for i in ipv6:
+        v6.append(i.value)
+    
+    v4 = sorted(list(set(v4)))
+    v6 = sorted(list(set(v6)))
+
+    return {"IPv4": v4, "IPv6": v6}
+
+    #poll the CPU, return list containing seconds/percentage
+def pollCPU(session, duration=120, interval=5):
+
+    collection =  []
+    start = time.time()
+
+    while True:
+
+        past = time.time() - start
+
+        if past > duration:
+            break
+
+        cpuValue = session.get(ciscoCPU).value
+
+        try:
+            cpu = int(cpuValue)
+        
+        except:
+            cpu = 0
+    
+        collection.append((int(past), cpu))
+        time.sleep(interval)
+
+    return collection
+
+    #CPU graph making and saving
+def cpuGraph(collection, file):
+
+    xValue = []
+    yValue = []
+
+    for sec, cpu in collection:
+        xValue.append(sec)
+        yValue.append(cpu)
+    
+    plt.figure()
+    plt.plot(xValue, yValue)
+    plt.title("R1 CPU Utilization")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("CPU (Percentage %)")
+    plt.grid(True)
+    plt.savefig(file)
+    plt.close()
+
+    #Write our output to a JSON file
+def writeItOut(file, addr, ints):
+    
+    with open(file, "w") as f:
+
+        f.write("Address List\n")
+        f.write(json.dumps(addr, indent=2))
+        f.write("\n\nInterface Status\n")
+        f.write (json.dumps(ints, indent=2))
+
+    #Create a function to tie all the helpers together
+def runSNMP():
+
+    print("calling the run SNMP function")
+
+    community = "public"
+
+    routers = {             #I should fix hardcoding lager
+
+        "R1": "2001:db8:1:0::1",
+        "R2": "2001:db8:2:0:c802:31ff:feb1:0",
+        "R3": "2001:db8:2:0:c803:31ff:fec0:0",
+        "R4": "2001:db8:2:0:c804:31ff:fecf:0",
+        "R5": "2001:db8:2:0:c805:31ff:fefc:0",
+    }
+
+    addrs = {}
+    ifaces = {}
+
+    for rtr in routers:
+
+        session = startSession(routers[rtr], community)
+
+        addrs[rtr] = ipAdd(session)
+        ifaces[rtr] = intStat(session)
+
+    r1Cpu = startSession(routers['R1'], community)
+    smp = pollCPU(r1Cpu)
+
+    graphFile = "/home/netman/Documents/Labs/Lab05/graphs/cpuGraph.jpg"
+    cpuGraph(smp,graphFile)
+
+    fileOut = "/home/netman/Documents/Labs/Lab05/output/snmpOutput.txt"
+    writeItOut(fileOut,addrs,ifaces)
+
+    return fileOut, graphFile
+
+
+#At the end, the main function encapsulates the core logic
+def main():
+    return runSNMP()
+
+
+#The code concludes with the namespace check.
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.error("Keyboard interrupt detected. Exiting gracefully.")
